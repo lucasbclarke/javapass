@@ -1,0 +1,4 @@
+#!/bin/sh 
+
+javac passwordManager.java
+java passwordManager $1 $2 $3
