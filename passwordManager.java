@@ -1,8 +1,11 @@
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.io.IOException;
 import java.util.Random;
+import java.util.Scanner;
 
 public class passwordManager {
     private static void generatePassword() {
@@ -79,7 +82,7 @@ public class passwordManager {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException{
         if (args.length > 0) {
             switch (args[0]) {
                 case "generate":
@@ -89,9 +92,50 @@ public class passwordManager {
                     if (args.length == 3) {
                         if (args[1].length() > 0) {
                             if (args[2].length() > 0) {
+                                Path path = Paths.get("/tmp", "secrets-location");
+                                if (Files.exists(path)) {
+                                    System.out.println("A previously used secrets location has been found, would you like this to be used instead of the location provided? (y/n)");
+                                    BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+                                    if (reader.readLine().contains("y")) {
+                                        try (Scanner fsc = new Scanner(path)) {
+                                            while(fsc.hasNextLine()) {
+                                                String line = fsc.nextLine().trim();
+                                                findPassword(args[1], line);
+                                            }
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
+                                    } else if (reader.readLine().contains("n")) {
+                                        findPassword(args[1], args[2]);
+                                    } else {
+                                        System.out.println("Please type y or n to confirm selection");
+                                    }
+                                } else {
+                                    try {
+                                        Files.createFile(path);
+                                        Files.writeString(path, args[2]);
+                                        findPassword(args[1], args[2]);
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+
                                 findPassword(args[1], args[2]);
                             } else {
-                                System.out.println("Secrets location is incorrect or not provided");
+                                Path path = Paths.get("/tmp", "secrets-location");
+                                if (Files.exists(path)) {
+                                    System.out.println("file exisits");
+                                    try (Scanner sc = new Scanner(path)) {
+                                        while(sc.hasNextLine()) {
+                                            String line = sc.nextLine().trim();
+                                            findPassword(args[1], line);
+                                        }
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                } else {
+                                    System.out.println("Secrets location is incorrect or not provided");
+                                }
                             }
                         } else {
                             System.out.println("Service is incorrect or not provided");
